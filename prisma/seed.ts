@@ -1,34 +1,32 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/generated/client'
+import sampleData from '@/db/sample-date';
+import { hash } from '@/lib/encrypt';
 
 const prisma = new PrismaClient()
 
 async function main() {
-    // Удаляем все существующие продукты (опционально)
-    await prisma.product.deleteMany({})
+    await prisma.product.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.verificationToken.deleteMany();
+    await prisma.user.deleteMany();
 
-    // Создаем тестовые продукты
-    const product1 = await prisma.product.create({
-        data: {
-            name: 'Смартфон Galaxy S23',
-            imageUrl: 'https://example.com/images/galaxy-s23.jpg'
-        },
-    })
+    const users = [];
+    for (let i = 0; i < sampleData.users.length; i++) {
+        users.push({
+            ...sampleData.users[i],
+            password: await hash(sampleData.users[i].password),
+        });
+        console.log(
+            sampleData.users[i].password,
+            await hash(sampleData.users[i].password)
+        );
+    }
 
-    const product2 = await prisma.product.create({
-        data: {
-            name: 'Ноутбук MacBook Pro',
-            imageUrl: 'https://example.com/images/macbook-pro.jpg'
-        },
-    })
+    await prisma.user.createMany({ data: users });
 
-    const product3 = await prisma.product.create({
-        data: {
-            name: 'Наушники Sony WH-1000XM5',
-            imageUrl: 'https://example.com/images/sony-headphones.jpg'
-        },
-    })
+    console.log('Database seeded successfully!');
 
-    console.log({ product1, product2, product3 })
 }
 
 main()
