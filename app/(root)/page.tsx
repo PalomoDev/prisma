@@ -1,12 +1,17 @@
 import {getProducts} from "@/lib/actions/product.actions";
 import { prismaToJson } from "@/lib/utils/prisma-serializer"
 import Image from "next/image";
+import {auth} from "@/auth";
 
 
 export default async function Home() {
     const {success, data, error
     } = await getProducts();
     const products = success ? prismaToJson(data) : [];
+
+
+
+
 
 
     return (
@@ -39,6 +44,9 @@ export default async function Home() {
                 </div>
             )}
 
+
+
         </div>
+
     );
 }

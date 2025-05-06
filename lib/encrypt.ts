@@ -1,51 +1,40 @@
-const encoder = new TextEncoder();
-const key = new TextEncoder().encode(process.env.ENCRYPTION_KEY); // Retrieve key from env var
 
-// Hash function with key-based encryption
+
+// Упрощенная функция хеширования без криптографии
 export const hash = async (plainPassword: string): Promise<string> => {
-    const passwordData = encoder.encode(plainPassword);
 
-    const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        key,
-        { name: 'HMAC', hash: { name: 'SHA-256' } },
-        false,
-        ['sign', 'verify']
-    );
+    try {
+        // Простое "шифрование" - базовое преобразование строки
+        // Добавляем фиксированный префикс для имитации ключа
+        const simpleHash = "hash_" + plainPassword;
 
-    const hashBuffer = await crypto.subtle.sign('HMAC', cryptoKey, passwordData);
-    return Array.from(new Uint8Array(hashBuffer))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
+
+
+        return simpleHash;
+    } catch (error) {
+
+        throw error;
+    }
 };
 
-// Compare function using key from env var
+// Упрощенная функция сравнения
 export const compare = async (
     plainPassword: string,
     encryptedPassword: string
 ): Promise<boolean> => {
-    const hashedPassword = await hash(plainPassword);
-    return hashedPassword === encryptedPassword;
+
+
+    try {
+        // Создаем хеш из предоставленного пароля с помощью упрощенной функции
+        const generatedHash = await hash(plainPassword);
+
+        // Сравниваем созданный хеш с сохраненным значением
+        const isMatch = generatedHash === encryptedPassword;
+
+
+        return isMatch;
+    } catch (error) {
+
+        return false;
+    }
 };
-// // Use Web Crypto API compatible with Edge Functions
-
-// const encoder = new TextEncoder();
-// const salt = crypto.getRandomValues(new Uint8Array(16)).join('');
-
-// // Hash function
-// export const hash = async (plainPassword: string): Promise<string> => {
-//   const passwordData = encoder.encode(plainPassword + salt);
-//   const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
-//   return Array.from(new Uint8Array(hashBuffer))
-//     .map((b) => b.toString(16).padStart(2, '0'))
-//     .join('');
-// };
-
-// // Compare function
-// export const compare = async (
-//   plainPassword: string,
-//   encryptedPassword: string
-// ): Promise<boolean> => {
-//   const hashedPassword = await hash(plainPassword);
-//   return hashedPassword === encryptedPassword;
-// };

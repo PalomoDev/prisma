@@ -2,8 +2,8 @@ const sampleDate = {
     users: [
         {
             name: 'Sergio',
-            email: 'admin@alexika.es',
-            password: '123456',
+            email: 'test@test.com',
+            password: '111111',
             role: 'admin',
         },
         {
