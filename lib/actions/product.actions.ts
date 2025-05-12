@@ -1,8 +1,8 @@
 "use server"
-// import { PrismaClient } from "@/prisma/generated/client"
+
 import { prisma } from "@/db/prisma"
 
-// const prisma = new PrismaClient()
+
 
 export async function getProducts() {
 
@@ -13,4 +13,11 @@ export async function getProducts() {
         console.error('Ошибка при получении продуктов:', error)
         return { success: false, error: 'Не удалось загрузить продукты' }
     }
+}
+
+// Get single product by it's slug
+export async function getProductBySlug(slug: string) {
+    return prisma.product.findFirst({
+        where: {slug: slug},
+    });
 }

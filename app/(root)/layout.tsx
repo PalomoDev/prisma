@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import Header from "@/components/shared/layout/header";
+import { Toaster } from "@/components/ui/sonner"
+
+
+
 
 
 
@@ -14,9 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <div>
+      <div className='flex h-screen flex-col'>
           <Header />
-          {children}
+          <main className='flex-1 wrapper'>{children}</main>
+          <Toaster />
       </div>
 
 

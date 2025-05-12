@@ -4,13 +4,8 @@
 export const hash = async (plainPassword: string): Promise<string> => {
 
     try {
-        // Простое "шифрование" - базовое преобразование строки
-        // Добавляем фиксированный префикс для имитации ключа
-        const simpleHash = "hash_" + plainPassword;
 
-
-
-        return simpleHash;
+        return "hash_" + plainPassword;;
     } catch (error) {
 
         throw error;
@@ -29,12 +24,12 @@ export const compare = async (
         const generatedHash = await hash(plainPassword);
 
         // Сравниваем созданный хеш с сохраненным значением
-        const isMatch = generatedHash === encryptedPassword;
 
 
-        return isMatch;
+
+        return generatedHash === encryptedPassword;;
     } catch (error) {
-
+        console.error(error);
         return false;
     }
 };

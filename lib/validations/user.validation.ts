@@ -30,6 +30,16 @@ export const createUserSchema = z.object({
     image: z.string().url({ message: 'Неверный формат URL изображения' }).optional(),
 });
 
+export const signUpFormSchema = z.object({
+    name: z.string().min(1, { message: 'Имя обязательно' }).default('NO_NAME'),
+    email: z.string().email({ message: 'Неверный формат email' }).default('<EMAIL>'),
+    password: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }).default('<PASSWORD>'),
+    confirmPassword: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }).default('<PASSWORD>'),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+})
+
 /**
  * Схема для обновления пользователя
  */

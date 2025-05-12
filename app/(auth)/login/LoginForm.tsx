@@ -3,21 +3,21 @@
 import React, { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { handleLogin } from "@/lib/actions/auth.actions";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 // Компонент кнопки отправки
 function SubmitButton() {
     const { pending } = useFormStatus();
 
     return (
-        <button
-            className={`w-full py-2 px-4 rounded text-white transition-colors ${
-                pending ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-            type="submit"
+        <Button
+            className='w-full'
+            variant='default'
             disabled={pending}
         >
             {pending ? 'Вход...' : 'Войти'}
-        </button>
+        </Button>
     );
 }
 
@@ -67,6 +67,15 @@ export default function LoginForm() {
                         {state.message}
                     </div>
                 )}
+
+                <div className='text-sm text-center text-muted-foreground'>
+                    Don&apos;t have an account?{' '}
+                    <Link href='/sign-up' target='_self' className='link'>
+                        Sign Up
+                    </Link>
+                </div>
+
+
             </form>
         </>
     );

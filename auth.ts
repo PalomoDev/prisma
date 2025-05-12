@@ -3,6 +3,8 @@ import Credentials from "@auth/core/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/db/prisma";
 import { compare } from "@/lib/encrypt";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 const adapter = PrismaAdapter(prisma as any)
 
@@ -43,8 +45,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     return {
                         id: user.id,
                         name: user.name,
-                        email: user.email
-                        // Поле role не будет доступно в сессии без callbacks
+                        email: user.email,
+                        role: user.role // Поле role не будет доступно в сессии без callbacks
                     };
                 } catch (error) {
                     console.error("Ошибка при авторизации:", error);
@@ -54,7 +56,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         })
     ],
     session: {
-        strategy: "jwt" as const,
+        strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 дней
     },
     pages: {
@@ -65,10 +67,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     callbacks: {
         async session({ session, user, trigger, token }: any) {
+
+
             // Set the user ID from the token
             session.user.id = token.sub;
-            session.user.role = token.role;
             session.user.name = token.name;
+            session.user.role = token.role;
 
             // If there is an update, set the user name
             if (trigger === 'update') {
@@ -77,6 +81,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
             return session;
         },
+
+        async jwt({ token, user, trigger, session }: any) {
+            if(user) {
+
+                token.role = user.role;
+            }
+
+            return token;
+        },
+
+
+
+
 
     },
 

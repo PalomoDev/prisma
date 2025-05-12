@@ -1,25 +1,26 @@
-// LogoutButton.tsx (клиентский компонент)
 'use client'
 
-import { useRouter } from "next/navigation";
+
 import { handleSignOut } from "@/lib/actions/auth.actions";
+import { Button } from "@/components/ui/button";
 
-export default function LogoutButton() {
-    const router = useRouter();
+interface LogoutButtonProps {
+    user: string | null | undefined;
+}
 
-    const onLogout = async () => {
-        const result = await handleSignOut();
-        if (result.success) {
-            router.refresh();
-        }
+
+export default function LogoutButton({user}: LogoutButtonProps) {
+
+    const handleLogout = async () => {
+        await handleSignOut();
     };
 
     return (
-        <button
+        <Button
             className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-            onClick={onLogout}
+            onClick={handleLogout}
         >
-            Выйти
-        </button>
+            {user && `${user} | `}Выйти
+        </Button>
     );
 }
