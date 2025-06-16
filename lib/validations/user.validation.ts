@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import {PAYMENT_METHODS} from "@/lib/constants";
 
 /**
  * Перечисление возможных ролей пользователя
@@ -6,16 +7,21 @@ import { z } from 'zod';
 export const UserRoleEnum = z.enum(['user', 'admin']);
 export type UserRole = z.infer<typeof UserRoleEnum>;
 
-/**
- * Схема валидации адреса пользователя
- */
-export const addressSchema = z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zipCode: z.string().optional(),
-    country: z.string().optional(),
+
+// Schema for the shipping address in Spain
+export const shippingAddressSchema = z.object({
+    country: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    lastName: z.string().min(2, 'Los apellidos deben tener al menos 2 caracteres'),
+    addressLine1: z.string().min(3, 'La dirección debe tener al menos 3 caracteres'),
+    addressLine2: z.string().optional(),
+    city: z.string().min(2, 'La ciudad debe tener al menos 2 caracteres'),
+    province: z.string().min(2, 'La provincia es obligatoria'),
+    postalCode: z.string().length(5, 'El código postal debe tener 5 dígitos').regex(/^\d{5}$/, 'El código postal debe contener 5 dígitos'),
+    phoneNumber: z.string().min(9, 'El número de teléfono debe tener al menos 9 dígitos').regex(/^\d+$/, 'El número de teléfono debe contener solo dígitos'),
+
 });
+
 
 /**
  * Схема для создания пользователя
@@ -25,10 +31,12 @@ export const createUserSchema = z.object({
     email: z.string().email({ message: 'Неверный формат email' }),
     password: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }),
     role: UserRoleEnum.default('user'),
-    address: addressSchema.optional(),
+    address: shippingAddressSchema.optional(),
     paymentMethod: z.string().optional(),
     image: z.string().url({ message: 'Неверный формат URL изображения' }).optional(),
 });
+
+
 
 export const signUpFormSchema = z.object({
     name: z.string().min(1, { message: 'Имя обязательно' }).default('NO_NAME'),
@@ -49,7 +57,7 @@ export const updateUserSchema = z.object({
     email: z.string().email({ message: 'Неверный формат email' }).optional(),
     password: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }).optional(),
     role: UserRoleEnum.optional(),
-    address: addressSchema.optional(),
+    address: shippingAddressSchema.optional(),
     paymentMethod: z.string().optional(),
     image: z.string().url({ message: 'Неверный формат URL изображения' }).optional(),
 });
@@ -85,9 +93,20 @@ export const getUserByIdSchema = z.object({
 /**
  * Типы на основе схем Zod для использования в TypeScript
  */
-export type Address = z.infer<typeof addressSchema>;
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type GetUserByIdInput = z.infer<typeof getUserByIdSchema>;
+
+
+// Schema for payment method
+export const paymentMethodSchema = z
+    .object({
+        type: z.string().min(1, 'Payment method is required'),
+    })
+    .refine((data) => PAYMENT_METHODS.includes(data.type), {
+        path: ['type'],
+        message: 'Invalid payment method',
+    });

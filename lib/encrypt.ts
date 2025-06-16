@@ -27,7 +27,7 @@ export const compare = async (
 
 
 
-        return generatedHash === encryptedPassword;;
+        return generatedHash === encryptedPassword;
     } catch (error) {
         console.error(error);
         return false;
