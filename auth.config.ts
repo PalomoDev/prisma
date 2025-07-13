@@ -1,12 +1,27 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextAuthConfig } from 'next-auth';
 import { NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 export const authConfig = {
-  providers: [], // Required by NextAuthConfig type
+  providers: [],
   callbacks: {
-    authorized({ request, auth }: any) {
-      // Array of regex patterns of paths we want to protect
+    async authorized({ request, auth }: any) {
+      const { pathname } = request.nextUrl;
+
+      // Для админских путей получаем токен напрямую
+      if (pathname.startsWith('/admin')) {
+        const token = await getToken({
+          req: request,
+          secret: process.env.AUTH_SECRET
+        });
+
+        console.log('Admin check - Token:', token);
+
+        if (!token) return false; // Не залогинен
+        if (token.role !== 'admin') return false; // Не админ
+      }
+
+      // Остальные защищенные пути
       const protectedPaths = [
         /\/shipping-address/,
         /\/payment-method/,
@@ -14,29 +29,15 @@ export const authConfig = {
         /\/profile/,
         /\/user\/(.*)/,
         /\/order\/(.*)/,
-        /\/admin/,
       ];
 
-      // Get pathname from the req URL object
-      const { pathname } = request.nextUrl;
-      // Check if user is not authenticated and accessing a protected path
       if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
 
-      // Check for session cart cookie
+      // Сессионная корзина
       if (!request.cookies.get('sessionCartId')) {
-        // Generate new session cart id cookie
         const sessionCartId = crypto.randomUUID();
-        
-        // Create new response and add the new headers
-        const response = NextResponse.next({
-          request: {
-            headers: new Headers(request.headers),
-          },
-        });
-
-        // Set newly generated sessionCartId in the response cookies
+        const response = NextResponse.next();
         response.cookies.set('sessionCartId', sessionCartId);
-
         return response;
       }
 

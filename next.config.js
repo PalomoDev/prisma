@@ -26,6 +26,12 @@ module.exports = {
                 port: '',
                 pathname: '**',
             },
+            {
+                protocol: 'https',
+                hostname: 'utfs.io',
+                port: '',
+                pathname: '/**',
+            },
             // Можно добавить и конкретные IP-адреса по необходимости
             // {
             //     protocol: 'http',

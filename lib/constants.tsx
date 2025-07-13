@@ -1,5 +1,5 @@
 import {z} from "zod";
-import { ShippingAddressFormFieldConfig } from "@/types";
+import {InsertProductSchema, ShippingAddressFormFieldConfig} from "@/types";
 
 export const SHIPPING_ADDRESS_DEFAULT = {
     country: '',
@@ -31,3 +31,86 @@ export const PAYMENT_METHODS = process.env.PAYMENT_METHODS
     : ['PayPal', 'Stripe', 'CashOnDelivery'];
 export const DEFAULT_PAYMENT_METHOD =
     process.env.DEFAULT_PAYMENT_METHOD || 'PayPal';
+
+export const PAGE_SIZE = Number(process.env.PAGE_SIZE) || 12;
+
+// Исправленные дефолтные значения для формы
+export const productDefaultValues: InsertProductSchema = {
+    name: '',
+    slug: '',
+    sku: '',
+    categoryId: '',
+    brandId: '',
+    description: '',
+    stock: 0,
+    price: '0.00',
+    images: [],
+    isFeatured: false,        // Указываем явно
+    banner: null,
+    subcategoryIds: [],       // Указываем явно
+    featureIds: [],          // Указываем явно
+    specifications: [],       // Указываем явно
+};
+
+export const categoryDefaultValues = {
+    name: '',
+    slug: '',
+    description: '',
+    isActive: false,
+    sortOrder: 0,
+    subcategoryIds: [] // добавляем это поле
+}
+
+export const subcategoryDefaultValues = {
+    name: '',
+    slug: '',
+    description: '',
+    isActive: false,
+    sortOrder: 0,
+    categoryIds: [] // пустой массив по умолчанию
+}
+
+export const brandDefaultValues = {
+    name: '',
+    slug: '',
+    description: null,
+    logo: null,
+    website: null,
+    isActive: true,
+    sortOrder: 0,
+};
+
+export const featureDefaultValues = {
+    name: '',
+    key: '',
+    icon: '',
+    iconImage: null,
+    description: null,
+    isActive: true,
+    sortOrder: 0,
+};
+
+
+export const SPECIFICATION_TYPES = [
+    { value: 'number', label: 'Число' },
+    { value: 'text', label: 'Текст' },
+    { value: 'select', label: 'Выбор' },
+    { value: 'boolean', label: 'Да/Нет' },
+    { value: 'range', label: 'Диапазон' },
+] as const;
+
+// Значения по умолчанию для формы создания спецификации
+export const specificationDefaultValues = {
+    name: '',
+    key: '',
+    description: null,
+    unit: null,
+    type: 'text' as const,
+    icon: null,
+    category: null,
+    isActive: true,
+    sortOrder: 0,
+    categoryIds: [] as string[],
+    isGlobal: false,
+};
+

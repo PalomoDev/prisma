@@ -1,36 +1,32 @@
 'use client';
-import { useState } from 'react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 
-const ProductImages = ({ images }: { images: string[] }) => {
-    const [current, setCurrent] = useState(0);
+interface ProductGalleryGridProps {
+    images: string[];
+}
+
+const ProductGalleryGrid = ({ images }: ProductGalleryGridProps) => {
+    // Показываем до 4 изображений в сетке 2x2
+    const displayImages = images.slice(0, 4);
 
     return (
-        <div className='space-y-4'>
-            <Image
-                src={`/${images[current]}`}
-                alt='product image'
-                width={1000}
-                height={1000}
-                className='min-h-[300px] object-cover object-center'
-            />
-            <div className='flex'>
-                {images.map((image, index) => (
-                    <div
-                        key={image}
-                        onClick={() => setCurrent(index)}
-                        className={cn(
-                            'border mr-2 cursor-pointer hover:border-orange-600',
-                            current === index && 'border-orange-500'
-                        )}
-                    >
-                        <Image src={`/${image}`} alt='image' width={100} height={100} />
-                    </div>
-                ))}
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+            {displayImages.map((image, index) => (
+                <div
+                    key={index}
+                    className="aspect-[3/2] overflow-hidden rounded-lg bg-gray-100"
+                >
+                    <Image
+                        src={image}
+                        alt={`Product image ${index + 1}`}
+                        width={400}
+                        height={267}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                </div>
+            ))}
         </div>
     );
 };
 
-export default ProductImages;
+export default ProductGalleryGrid;

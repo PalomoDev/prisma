@@ -2,10 +2,11 @@
 
 import { prisma } from "@/db/prisma"
 import { formatError } from "@/lib/utils"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import { z } from "zod"
 import { GetCategoriesResponse, GetCategoryByIdResponse } from "@/types"
 import { createCategorySchema, updateCategorySchema } from "@/lib/validations/category.validation"
+import {CategoryForFiltersResponse} from "@/lib/validations/category.actions.validation";
 
 /**
  * ============================================================================
@@ -16,48 +17,97 @@ import { createCategorySchema, updateCategorySchema } from "@/lib/validations/ca
 /**
  * Получает все категории с возможностью фильтрации по активности
  */
-export async function getCategories(activeOnly: boolean = false): Promise<GetCategoriesResponse> {
-    try {
-        const categories = await prisma.category.findMany({
-            where: activeOnly ? { isActive: true } : undefined,
-            orderBy: [
-                { sortOrder: 'asc' },
-                { name: 'asc' }
-            ],
-            include: {
-                categorySubcategories: {
-                    include: {
-                        subcategory: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true
+export const getCategories = unstable_cache(
+    async (activeOnly: boolean = false): Promise<GetCategoriesResponse> => {
+        try {
+            const categories = await prisma.category.findMany({
+                where: activeOnly ? { isActive: true } : undefined,
+                orderBy: [
+                    { sortOrder: 'asc' },
+                    { name: 'asc' }
+                ],
+                include: {
+                    categorySubcategories: {
+                        include: {
+                            subcategory: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true
+                                }
                             }
+                        },
+                        orderBy: {
+                            sortOrder: 'asc'
                         }
                     },
-                    orderBy: {
-                        sortOrder: 'asc'
-                    }
-                },
-                _count: {
-                    select: {
-                        products: true
+                    _count: {
+                        select: {
+                            products: true
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        return {
-            success: true,
-            data: categories
-        };
-    } catch (error) {
-        return {
-            success: false,
-            message: formatError(error)
-        };
+            return {
+                success: true,
+                data: categories
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: formatError(error)
+            };
+        }
+    },
+    ['getCategories'],
+    {
+        revalidate: 3600, // 1 час
+        tags: ['categories']
     }
-}
+);
+
+
+export const getCategoriesForFilters = unstable_cache(
+    async (activeOnly: boolean = false): Promise<CategoryForFiltersResponse> => {
+        try {
+            const categories = await prisma.category.findMany({
+                where: activeOnly ? { isActive: true } : undefined,
+                orderBy: [
+                    { sortOrder: 'asc' },
+                    { name: 'asc' }
+                ],
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    isActive: true,
+                    sortOrder: true,
+                    _count: {
+                        select: {
+                            products: true
+                        }
+                    }
+                }
+            });
+
+            return {
+                success: true,
+                data: categories
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: formatError(error)
+            };
+        }
+    },
+    ['getCategories'],
+    {
+        revalidate: 3600, // 1 час
+        tags: ['categories', 'getCategories']
+    }
+);
 
 /**
  * Создает новую категорию
@@ -81,6 +131,7 @@ export async function createCategory(data: z.infer<typeof createCategorySchema>)
             }
         });
 
+        revalidateTag('categories'); // Сбрасываем кэш
         revalidatePath('/admin/categories');
         return { success: true, message: 'Category created successfully' };
     } catch (error) {
@@ -109,6 +160,7 @@ export async function deleteCategory(id: string) {
             where: { id }
         });
 
+        revalidateTag('categories'); // Сбрасываем кэш
         revalidatePath('/admin/categories');
         return {
             success: true,
@@ -125,51 +177,58 @@ export async function deleteCategory(id: string) {
 /**
  * Получает категорию по ID
  */
-export async function getCategoryById(id: string): Promise<GetCategoryByIdResponse> {
-    try {
-        const category = await prisma.category.findUnique({
-            where: { id },
-            include: {
-                categorySubcategories: {
-                    include: {
-                        subcategory: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true
+export const getCategoryById = unstable_cache(
+    async (id: string): Promise<GetCategoryByIdResponse> => {
+        try {
+            const category = await prisma.category.findUnique({
+                where: { id },
+                include: {
+                    categorySubcategories: {
+                        include: {
+                            subcategory: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true
+                                }
                             }
+                        },
+                        orderBy: {
+                            sortOrder: 'asc'
                         }
                     },
-                    orderBy: {
-                        sortOrder: 'asc'
-                    }
-                },
-                _count: {
-                    select: {
-                        products: true
+                    _count: {
+                        select: {
+                            products: true
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        if (!category) {
+            if (!category) {
+                return {
+                    success: false,
+                    message: 'Category not found'
+                };
+            }
+
+            return {
+                success: true,
+                data: category
+            };
+        } catch (error) {
             return {
                 success: false,
-                message: 'Category not found'
+                message: formatError(error)
             };
         }
-
-        return {
-            success: true,
-            data: category
-        };
-    } catch (error) {
-        return {
-            success: false,
-            message: formatError(error)
-        };
+    },
+    ['getCategoryById'],
+    {
+        revalidate: 3600,
+        tags: ['categories']
     }
-}
+);
 
 /**
  * Обновляет категорию
@@ -236,6 +295,7 @@ export async function updateCategory(data: z.infer<typeof updateCategorySchema>)
             }
         });
 
+        revalidateTag('categories'); // Сбрасываем кэш
         revalidatePath('/admin/categories');
         return {
             success: true,

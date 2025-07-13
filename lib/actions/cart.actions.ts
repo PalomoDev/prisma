@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/db/prisma";
 import type { CartItem } from "@/types";
 import {formatError, PrismaToJson} from "@/lib/utils";
-import {cartItemSchema, insertCartSchema} from "@/lib/validations/product.validation";
+import {cartItemSchema, insertCartSchema} from "@/lib/validations/cart.validation";
 import { roundTwoDecimals } from "@/lib/utils";
 import {map} from "zod";
 import {revalidatePath} from "next/cache";

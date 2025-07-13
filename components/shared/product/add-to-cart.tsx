@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CartItem } from '@/types';
 import { useRouter } from "next/navigation";
 import { Plus, Minus, Loader } from "lucide-react";
+import { cn } from '@/lib/utils';
 
 import { toast } from "sonner"
 import {addItemToCart, removeItemFromCart} from "@/lib/actions/cart.actions";
@@ -11,7 +12,8 @@ import { useTransition } from "react";
 
 interface AddToCartProps {
     cart?: Cart;
-    item: CartItem
+    item: CartItem;
+    className?: string; // Добавили поддержку внешней стилизации
 }
 
 export const findItemIndexById = <T extends { productId: string }>(
@@ -25,15 +27,13 @@ export const findItemIndexById = <T extends { productId: string }>(
     return array.findIndex(item => item.productId === productId);
 };
 
-
-const AddToCart = ({ item, cart }: AddToCartProps) => {
+const AddToCart = ({ item, cart, className }: AddToCartProps) => {
     const router = useRouter();
     const productQuantity = cart?.items[findItemIndexById(cart?.items, item.productId)]?.qty;
 
     const [isPending, startTransition] = useTransition();
 
     const handleAddToCart = async () => {
-
         startTransition(async () => {
             const response = await addItemToCart(item);
 
@@ -46,12 +46,9 @@ const AddToCart = ({ item, cart }: AddToCartProps) => {
 
             return
         })
-
-
     }
 
     const handleRemoveFromCart = async () => {
-
         startTransition(async () => {
             const response = await removeItemFromCart(item.productId);
 
@@ -64,8 +61,6 @@ const AddToCart = ({ item, cart }: AddToCartProps) => {
 
             return
         })
-
-
     }
 
     return (
@@ -97,7 +92,10 @@ const AddToCart = ({ item, cart }: AddToCartProps) => {
                 </div>
             ) : (
                 <Button
-                    className="flex flex-1 items-center justify-center w-12 h-12 rounded-md bg-primary text-white hover:opacity-90"
+                    className={cn(
+                        "flex flex-1 items-center justify-center w-12 h-12 rounded-md bg-primary text-white hover:opacity-90",
+                        className // Применяем внешние стили
+                    )}
                     type="button"
                     onClick={handleAddToCart}
                     aria-label="Увеличить количество"

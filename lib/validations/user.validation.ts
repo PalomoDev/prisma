@@ -5,7 +5,7 @@ import {PAYMENT_METHODS} from "@/lib/constants";
  * Перечисление возможных ролей пользователя
  */
 export const UserRoleEnum = z.enum(['user', 'admin']);
-export type UserRole = z.infer<typeof UserRoleEnum>;
+
 
 
 // Schema for the shipping address in Spain
@@ -94,11 +94,6 @@ export const getUserByIdSchema = z.object({
  * Типы на основе схем Zod для использования в TypeScript
  */
 
-export type CreateUserInput = z.infer<typeof createUserSchema>;
-export type UpdateUserInput = z.infer<typeof updateUserSchema>;
-export type LoginUserInput = z.infer<typeof loginUserSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-export type GetUserByIdInput = z.infer<typeof getUserByIdSchema>;
 
 
 // Schema for payment method

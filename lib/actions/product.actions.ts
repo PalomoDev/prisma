@@ -7,9 +7,11 @@ import {revalidatePath} from "next/cache";
 import {z} from "zod";
 // Types
 import {
-    GetAllProductsResponse,
+    GetAllProductsResponse, ProductsGalleryResponse,
 } from "@/types";
 import {insertProductSchema} from "@/lib/validations/product.validation";
+import { Decimal } from '@prisma/client/runtime/library';
+
 
 /**
  * ============================================================================
@@ -399,12 +401,55 @@ export async function getAllProducts({
 }
 
 /**
+ * Получает все продукты с базовой информацией
+ */
+export async function getGalleryProducts(): Promise<ProductsGalleryResponse> {
+    try {
+        const rawData = await prisma.product.findMany({
+            where: {
+                isActive: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            select: {
+                id: true,
+                categoryId: true,
+                brandId: true,
+                name: true,
+                slug: true,
+                images: true,
+                price: true,
+                description: true,
+            },
+        });
+
+        // Преобразуем price (и, если нужно, rating) из Decimal в number
+        const data = rawData.map(product => ({
+            ...product,
+            price: (product.price as Decimal).toNumber(),
+
+        }));
+
+        return {
+            success: true,
+            data,
+
+        };
+    } catch (error) {
+        return {
+            success: false,
+            data: [],
+
+        };
+    }
+}
+
+/**
  * Получает рекомендуемые продукты (isFeatured = true) с базовой информацией
  */
 export async function getFeaturedProducts(limit: number = 4) {
     try {
-        console.log('🌟 getFeaturedProducts: Начинаем загрузку рекомендуемых продуктов...', { limit });
-
         const rawData = await prisma.product.findMany({
             where: {
                 isFeatured: true,
@@ -421,41 +466,25 @@ export async function getFeaturedProducts(limit: number = 4) {
                 images: true,
                 price: true,
                 rating: true,
+                description: true,
                 isFeatured: true,
             },
         });
 
-        console.log('🌟 getFeaturedProducts: Данные загружены из БД', {
-            featuredProductsCount: rawData.length,
-            requestedLimit: limit,
-            sampleProduct: rawData[0] ? {
-                id: rawData[0].id,
-                name: rawData[0].name,
-                slug: rawData[0].slug,
-                price: rawData[0].price,
-                rating: rawData[0].rating,
-                imagesCount: rawData[0].images.length,
-            } : null
-        });
 
-        const result = {
+
+        return {
             success: true,
             data: rawData,
             error: undefined,
-        };
-
-        return result;
+        }
 
     } catch (error) {
-        console.error('❌ Error in getFeaturedProducts:', error);
-
-        const errorResult = {
+        return {
             success: false,
             data: [],
             error: formatError(error)
         };
-
-        return errorResult;
     }
 }
 

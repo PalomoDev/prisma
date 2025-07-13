@@ -15,24 +15,263 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  slug        String      @unique(map: "product_slug_idx")
-  category    String
-  images      String[]
-  brand       String
-  description String
-  stock       Int
-  price       Decimal     @default(0) @db.Decimal(12, 2)
-  rating      Decimal     @default(0) @db.Decimal(3, 2)
-  numReviews  Int         @default(0)
-  isFeatured  Boolean     @default(false)
-  banner      String?
-  createdAt   DateTime    @default(now()) @db.Timestamp(6)
-  OrderItem   OrderItem[]
-  Review      Review[]
+// ========================================
+// PRODUCT MODELS - Основные модели товаров
+// ========================================
+
+// Категории товаров (палатки, спальные мешки, рюкзаки и т.д.)
+model Category {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String // "Палатки", "Спальные мешки"
+  slug        String   @unique // "palatki", "spalnie-meshki"
+  description String? // Описание категории
+  image       String? // Изображение категории для отображения
+  isActive    Boolean  @default(true) // Активна ли категория
+  sortOrder   Int      @default(0) // Порядок сортировки в меню
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  products               Product[] // Товары в этой категории
+  categorySubcategories  CategorySubcategory[] // Связь с подкатегориями через промежуточную таблицу
+  categorySpecifications CategorySpecification[] // Спецификации для категории
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("categories")
 }
+
+// Подкатегории товаров (2-местные палатки, зимние спальники и т.д.)
+model Subcategory {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String // "2-местные", "Экспедиционные", "Зимние", "Водонепроницаемые"
+  slug        String   @unique // Теперь глобально уникальный
+  description String? // Описание подкатегории
+  image       String? // Изображение подкатегории
+  isActive    Boolean  @default(true) // Активна ли подкатегория
+  sortOrder   Int      @default(0) // Общий порядок сортировки
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  categorySubcategories CategorySubcategory[] // Связь с категориями через промежуточную таблицу
+  productSubcategories  ProductSubcategory[] // Связь с товарами через промежуточную таблицу
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("subcategories")
+}
+
+// Связующая таблица между категориями и подкатегориями
+model CategorySubcategory {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId    String   @db.Uuid
+  subcategoryId String   @db.Uuid
+  sortOrder     Int      @default(0) // Порядок подкатегории в конкретной категории
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategory Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, subcategoryId]) // Уникальная пара
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([sortOrder])
+  @@map("category_subcategories")
+}
+
+// Связующая таблица между товарами и подкатегориями (many-to-many)
+model ProductSubcategory {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId     String   @db.Uuid
+  subcategoryId String   @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  subcategory Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, subcategoryId]) // Уникальная пара - товар не может иметь одну подкатегорию дважды
+  @@index([productId])
+  @@index([subcategoryId])
+  @@map("product_subcategories")
+}
+
+// Бренды товаров
+model Brand {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique // "Coleman", "The North Face", "Deuter"
+  slug        String   @unique // "coleman", "the-north-face", "deuter"
+  description String? // Описание бренда
+  logo        String? // Логотип бренда
+  website     String? // Сайт бренда
+  isActive    Boolean  @default(true) // Активен ли бренд
+  sortOrder   Int      @default(0) // Порядок сортировки
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  products Product[] // Товары этого бренда
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("brands")
+}
+
+// ========================================
+// SPECIFICATION MODELS - Модели спецификаций (НОВЫЙ ПОДХОД)
+// ========================================
+
+// Справочник всех возможных спецификаций
+model Specification {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique // "Количество мест", "Температура комфорта", "Вес", "Материал"
+  key         String   @unique // "capacity", "temperature", "weight", "material" - для программного доступа
+  description String? // "Максимальное количество спящих мест", "Температура комфортного сна"
+  unit        String? // "места", "°C", "кг", "мм", "л"
+  type        String // "number", "text", "select", "boolean", "range"
+  options     String[] @default([]) // Варианты для select: ["XS", "S", "M", "L", "XL"] или ["2-сезон", "3-сезон", "4-сезон"]
+  icon        String? // "users", "thermometer", "weight", "ruler" - иконка для отображения
+  category    String? // "size", "comfort", "protection", "material" - группировка спецификаций
+  isActive    Boolean  @default(true) // Активна ли спецификация
+  sortOrder   Int      @default(0) // Общий порядок сортировки
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  productSpecifications ProductSpecificationValue[] // Значения у товаров
+  categorySpecs         CategorySpecification[] // Связь с категориями
+
+  @@index([isActive])
+  @@index([category])
+  @@index([type])
+  @@map("specifications")
+}
+
+// Какие спецификации должны быть у товаров определенной категории
+model CategorySpecification {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId      String   @db.Uuid
+  specificationId String   @db.Uuid
+  isRequired      Boolean  @default(false) // Обязательная ли спецификация для этой категории
+  sortOrder       Int      @default(0) // Порядок отображения спецификации в категории
+  createdAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  specification Specification @relation(fields: [specificationId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, specificationId]) // Уникальная пара - категория не может иметь дубли спецификации
+  @@index([categoryId])
+  @@index([specificationId])
+  @@index([sortOrder])
+  @@map("category_specifications")
+}
+
+// Конкретные значения спецификаций для каждого товара
+model ProductSpecificationValue {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId       String   @db.Uuid
+  specificationId String   @db.Uuid
+  value           String // "4", "-10", "Полиэстер", "true", "S-M-L"
+  createdAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  specification Specification @relation(fields: [specificationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, specificationId]) // Товар не может иметь дубли одной спецификации
+  @@index([productId])
+  @@index([specificationId])
+  @@map("product_specification_values")
+}
+
+// Основная модель товара
+model Product {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String // Название товара
+  slug        String   @unique(map: "product_slug_idx") // URL-friendly название
+  sku         String   @unique // Артикул товара (Stock Keeping Unit)
+  categoryId  String   @db.Uuid // Связь с категорией
+  brandId     String   @db.Uuid // Связь с брендом
+  images      String[] // Массив URL изображений
+  description String // Описание товара
+  stock       Int // Количество на складе
+  price       Decimal  @default(0) @db.Decimal(12, 2) // Цена
+  rating      Decimal  @default(0) @db.Decimal(3, 2) // Рейтинг (0-5)
+  numReviews  Int      @default(0) // Количество отзывов
+  isFeatured  Boolean  @default(false) // Рекомендуемый товар
+  banner      String? // Баннер для товара
+  isActive    Boolean  @default(true) // Активен ли товар
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  category             Category                    @relation(fields: [categoryId], references: [id])
+  brand                Brand                       @relation(fields: [brandId], references: [id])
+  productSubcategories ProductSubcategory[] // Связь с подкатегориями через промежуточную таблицу
+  specificationValues  ProductSpecificationValue[] // Значения спецификаций товара
+  features             ProductFeature[] // Особенности товара (иконки: водостойкий, легкий и т.д.)
+  OrderItem            OrderItem[] // Позиции в заказах
+  Review               Review[] // Отзывы о товаре
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([sku]) // Индекс для быстрого поиска по артикулу
+  @@map("products")
+}
+
+// ========================================
+// FEATURE MODELS - Модели особенностей товаров
+// ========================================
+
+// Особенности товаров (водостойкость, легкость и т.д.)
+// Представлены иконками в интерфейсе
+model Feature {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String // "Водостойкий", "Легкий", "Ветрозащитный"
+  key         String   @unique // "waterproof", "lightweight", "windproof" - для программного доступа
+  icon        String // "droplet", "feather", "wind" - имя иконки (Lucide, Heroicons и т.д.)
+  iconImage   String? // "/icons/waterproof.svg" - путь к файлу иконки
+  description String? // "Защита от влаги до 3000мм", "Вес менее 2кг"
+  category    String? // "protection", "comfort", "convenience" - группировка особенностей
+  color       String? // "blue", "green", "orange" - цвет иконки/бейджа
+  isActive    Boolean  @default(true) // Активна ли особенность
+  sortOrder   Int      @default(0) // Порядок отображения
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  productFeatures ProductFeature[] // Товары с этой особенностью
+
+  @@index([isActive])
+  @@index([category])
+  @@map("features")
+}
+
+// Связь между товарами и их особенностями (many-to-many)
+model ProductFeature {
+  productId String @db.Uuid
+  featureId String @db.Uuid
+
+  // Связи
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@id([productId, featureId])
+  @@map("product_features")
+}
+
+// ========================================
+// USER & AUTH MODELS - Модели пользователей и аутентификации
+// ========================================
 
 model User {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -41,20 +280,25 @@ model User {
   emailVerified DateTime? @db.Timestamp(6)
   image         String?
   password      String?
-  role          String    @default("user")
-  address       Json?     @db.Json
-  paymentMethod String?
+  role          String    @default("user") // "user", "admin", "manager"
+  address       Json?     @db.Json // Адрес пользователя
+  paymentMethod String? // Предпочтительный способ оплаты
   createdAt     DateTime  @default(now()) @db.Timestamp(6)
   updatedAt     DateTime  @updatedAt
-  account       Account[]
-  session       Session[]
-  Cart          Cart[]
-  Order         Order[]
-  Review        Review[]
+
+  // Связи
+  account Account[] // Аккаунты соц. сетей
+  session Session[] // Сессии пользователя
+  Cart    Cart[] // Корзины пользователя
+  Order   Order[] // Заказы пользователя
+  Review  Review[] // Отзывы пользователя
+
+  @@map("users")
 }
 
+// Аккаунты социальных сетей (NextAuth)
 model Account {
-  userId            String  @db.Uuid
+  userId            String   @db.Uuid
   type              String
   provider          String
   providerAccountId String
@@ -65,88 +309,130 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
+  @@map("accounts")
 }
 
+// Сессии пользователей (NextAuth)
 model Session {
   sessionToken String   @id
   userId       String   @db.Uuid
   expires      DateTime @db.Timestamp(6)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime @updatedAt
 
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
+// Токены для верификации email (NextAuth)
 model VerificationToken {
   identifier String
   token      String
   expires    DateTime
 
   @@id([identifier, token])
+  @@map("verification_tokens")
 }
 
+// ========================================
+// SHOPPING MODELS - Модели покупок
+// ========================================
+
+// Корзина пользователя
 model Cart {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String?  @db.Uuid
-  sessionCartId String
-  items         Json[]   @default([]) @db.Json
-  itemsPrice    Decimal  @db.Decimal(12, 2)
-  totalPrice    Decimal  @db.Decimal(12, 2)
-  shippingPrice Decimal  @db.Decimal(12, 2)
-  taxPrice      Decimal  @db.Decimal(12, 2)
+  userId        String?  @db.Uuid // Связь с пользователем (может быть null для гостей)
+  sessionCartId String // ID сессии для гостевых корзин
+  items         Json[]   @default([]) @db.Json // Товары в корзине
+  itemsPrice    Decimal  @db.Decimal(12, 2) // Стоимость товаров
+  totalPrice    Decimal  @db.Decimal(12, 2) // Общая стоимость
+  shippingPrice Decimal  @db.Decimal(12, 2) // Стоимость доставки
+  taxPrice      Decimal  @db.Decimal(12, 2) // Налоги
   createdAt     DateTime @default(now()) @db.Timestamp(6)
-  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt     DateTime @updatedAt @db.Timestamp(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionCartId])
+  @@map("carts")
 }
 
+// Заказы
 model Order {
-  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId          String      @db.Uuid
-  shippingAddress Json        @db.Json
-  paymentMethod   String
-  paymentResult   Json?       @db.Json
-  itemsPrice      Decimal     @db.Decimal(12, 2)
-  shippingPrice   Decimal     @db.Decimal(12, 2)
-  taxPrice        Decimal     @db.Decimal(12, 2)
-  totalPrice      Decimal     @db.Decimal(12, 2)
-  isPaid          Boolean     @default(false)
-  paidAt          DateTime?   @db.Timestamp(6)
-  isDelivered     Boolean     @default(false)
-  deliveredAt     DateTime?   @db.Timestamp(6)
-  createdAt       DateTime    @default(now()) @db.Timestamp(6)
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderitems      OrderItem[]
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @db.Uuid
+  shippingAddress Json      @db.Json // Адрес доставки
+  paymentMethod   String // Способ оплаты
+  paymentResult   Json?     @db.Json // Результат платежа
+  itemsPrice      Decimal   @db.Decimal(12, 2) // Стоимость товаров
+  shippingPrice   Decimal   @db.Decimal(12, 2) // Стоимость доставки
+  taxPrice        Decimal   @db.Decimal(12, 2) // Налоги
+  totalPrice      Decimal   @db.Decimal(12, 2) // Итоговая стоимость
+  isPaid          Boolean   @default(false) // Оплачен ли заказ
+  paidAt          DateTime? @db.Timestamp(6) // Дата оплаты
+  isDelivered     Boolean   @default(false) // Доставлен ли заказ
+  deliveredAt     DateTime? @db.Timestamp(6) // Дата доставки
+  status          String    @default("pending") // "pending", "processing", "shipped", "delivered", "cancelled"
+  createdAt       DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamp(6)
+
+  // Связи
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderitems OrderItem[] // Позиции заказа
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
 }
 
+// Позиции в заказе
 model OrderItem {
   orderId   String  @db.Uuid
   productId String  @db.Uuid
-  qty       Int
-  price     Decimal @db.Decimal(12, 2)
-  name      String
-  slug      String
-  image     String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  qty       Int // Количество
+  price     Decimal @db.Decimal(12, 2) // Цена на момент заказа
+  name      String // Название товара на момент заказа
+  slug      String // Slug товара на момент заказа
+  image     String // Изображение товара на момент заказа
+
+  // Связи
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([orderId, productId], map: "orderitems_orderId_productId_pk")
+  @@map("order_items")
 }
 
+// ========================================
+// REVIEW MODELS - Модели отзывов
+// ========================================
+
+// Отзывы о товарах
 model Review {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId             String   @db.Uuid
   productId          String   @db.Uuid
-  rating             Int
-  title              String
-  description        String
-  isVerifiedPurchase Boolean  @default(true)
+  rating             Int // Оценка 1-5
+  title              String // Заголовок отзыва
+  description        String // Текст отзыва
+  isVerifiedPurchase Boolean  @default(true) // Подтвержденная покупка
+  isApproved         Boolean  @default(false) // Одобрен ли отзыв модератором
   createdAt          DateTime @default(now()) @db.Timestamp(6)
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime @updatedAt @db.Timestamp(6)
+
+  // Связи
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId])
+  @@index([isApproved])
+  @@map("reviews")
 }

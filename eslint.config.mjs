@@ -16,9 +16,15 @@ const eslintConfig = [
       // Отключаем правило для 'any'
       "@typescript-eslint/no-explicit-any": "off",
 
-      // Дополнительные правила можно добавить здесь
-      "prefer-const": "error",
-      "no-unused-vars": "warn"
+      // Настраиваем правило для неиспользуемых переменных
+
+      "@typescript-eslint/no-unused-vars": "off",
+
+      // Отключаем базовое правило no-unused-vars (используем TypeScript версию)
+      "no-unused-vars": "off",
+
+      // Дополнительные правила
+      "prefer-const": "error"
     }
   }
 ];

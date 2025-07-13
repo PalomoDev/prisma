@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/shared/layout/header";
 import { Toaster } from "@/components/ui/sonner"
+import Footer from "@/components/shared/layout/footer";
 
 
 
@@ -18,9 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <div className='flex h-screen flex-col'>
+      <div className='flex flex-col bg-[#FAFAFA]'>
           <Header />
-          <main className='flex-1 wrapper'>{children}</main>
+          <main className='flex-1 main-wrapper ' style={{paddingTop: '5rem'}}>{children}</main>
+          <Footer />
           <Toaster />
       </div>
 
