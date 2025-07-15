@@ -13,14 +13,14 @@ interface ImageMenuGridProps {
 
 const ImageMenuGrid = ({ items }: ImageMenuGridProps) => {
   return (
-    <div className="image-menu-grid grid grid-cols-5 gap-6 max-w-6xl mx-auto">
+    <div className="image-menu-grid flex flex-wrap justify-center gap-6 max-w-6xl mx-auto">
       {items.map((item) => (
         <Link
           key={item.name}
           href={item.href}
-          className="image-menu-card block bg-white overflow-hidden shadow-sm"
+          className="image-menu-card block bg-white overflow-hidden shadow-sm w-56"
         >
-          <div className="image-container relative aspect-[4/3] overflow-hidden">
+          <div className="image-container relative w-full h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
             <Image
               src={item.image}
               alt={item.alt || item.name}

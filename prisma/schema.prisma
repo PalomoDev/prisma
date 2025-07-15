@@ -48,6 +48,7 @@ model Subcategory {
   slug        String   @unique // Теперь глобально уникальный
   description String? // Описание подкатегории
   image       String? // Изображение подкатегории
+  isActivity Boolean @default(false) // Является ли субкатегория активностью (для отображения в меню активностей)
   isActive    Boolean  @default(true) // Активна ли подкатегория
   sortOrder   Int      @default(0) // Общий порядок сортировки
   createdAt   DateTime @default(now()) @db.Timestamp(6)
@@ -59,6 +60,7 @@ model Subcategory {
 
   @@index([isActive])
   @@index([sortOrder])
+  @@index([isActivity])
   @@map("subcategories")
 }
 

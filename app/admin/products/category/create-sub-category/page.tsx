@@ -1,17 +1,15 @@
 import CreateSubcategoryForm from "@/components/admin/forms/subcategory-form";
-import {getCategories} from "@/lib/actions/category.actions";
-
+import { getCategoriesFull } from "@/lib/actions/new/category/get.actions";
 
 const CreateSubCategoryPage = async () => {
+  const categories = await getCategoriesFull();
 
-    const categories = await getCategories()
-
-    return (
-        <div>
-            Create SubCategory
-            <CreateSubcategoryForm categories={categories}/>
-        </div>
-    )
-}
+  return (
+    <div>
+      Create SubCategory
+      <CreateSubcategoryForm categories={categories} />
+    </div>
+  );
+};
 
 export default CreateSubCategoryPage;

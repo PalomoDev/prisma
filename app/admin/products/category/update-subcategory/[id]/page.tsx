@@ -1,5 +1,6 @@
 import { Metadata } from "next";
-import { getSubcategoryById, getCategories } from "@/lib/actions/product.actions";
+import { getSubcategoryById } from "@/lib/actions/new/subcategory/manage.actions";
+import { getCategoriesFull } from "@/lib/actions/new/category/get.actions";
 import { notFound } from "next/navigation";
 import UpdateSubcategoryForm from "@/components/admin/forms/update-subcategory-form";
 
@@ -19,7 +20,7 @@ const UpdateSubcategoryPage = async (props: {
     }
 
     // Получаем все доступные категории
-    const categoriesResponse = await getCategories();
+    const categoriesResponse = await getCategoriesFull();
     if (!categoriesResponse.success) {
         return <div>Error loading categories</div>;
     }

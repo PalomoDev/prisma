@@ -13,6 +13,7 @@ export type ImageMenuItem = {
   href: string;
   image: string;
   alt?: string;
+  description?: string;
 };
 
 // Новый тип для элементов меню с указанием типа отображения

@@ -13,6 +13,7 @@ import SearchButton from "@/components/shared/layout/header/search-button";
 import { getCategoriesLight } from "@/lib/actions/new/category/get.actions";
 import { CategoryLight } from "@/lib/validations/new/category.validation";
 import { ImageMenuItem } from "@/types/menu.type";
+import { getActivitySubcategoriesLight } from "@/lib/actions/new/subcategory/get.actions";
 
 // Моковые данные для ACTIVIDADES с картинками
 const actividadesImageData: ImageMenuItem[] = [
@@ -48,6 +49,17 @@ const actividadesImageData: ImageMenuItem[] = [
   },
 ];
 
+// Функция для трансформации субкатегорий-активностей в ImageMenuItem[]
+const transformActivitySubcategoriesToMenu = (subcategories: any[]) => {
+  return subcategories.map((actividad) => ({
+    name: actividad.name,
+    href: `/products/${actividad.slug}`,
+    image: actividad.image || `/activities/${actividad.slug}.png`, // используем image из БД или fallback
+    alt: actividad.description || actividad.name,
+    description: actividad.description,
+  }));
+};
+
 const transformCategoriesToMenu = (categories: CategoryLight[]) => {
   return categories.map((category) => ({
     title: category.name,
@@ -72,9 +84,26 @@ export default async function Header() {
   const cart = await getMyCart();
   const count = countCartItems(cart?.items);
   const categoriesResponse = await getCategoriesLight();
+  console.log("categoriesResponse:", categoriesResponse);
+  const actividadesResponse = await getActivitySubcategoriesLight();
+  console.log(
+    "actividadesResponse--------------------------------:",
+    actividadesResponse
+  );
+
+  // Трансформируем данные активностей
+  const actividadesMenu =
+    actividadesResponse.success && actividadesResponse.data
+      ? transformActivitySubcategoriesToMenu(actividadesResponse.data)
+      : [];
+
   const menuCategories = categoriesResponse.success
     ? transformCategoriesToMenu(categoriesResponse.data || [])
     : [];
+
+  // Debug: проверяем что приходит в menuCategories
+  console.log("Header - categoriesResponse:", categoriesResponse);
+  console.log("Header - menuCategories:", menuCategories);
 
   return (
     <header className="fixed top-0 left-0 right-0 flex items-center justify-between bg-white/95 z-50 pb-4">
@@ -86,7 +115,7 @@ export default async function Header() {
         </div>
         <AdaptiveNavigation
           products={menuCategories}
-          actividades={actividadesImageData}
+          actividades={actividadesMenu}
         />
 
         <div className="flex items-center pr-4">

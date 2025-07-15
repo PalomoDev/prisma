@@ -3,7 +3,8 @@ import { Metadata } from 'next';
 import { requireAdmin } from '@/lib/auth-guard';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { getAllFeatures, getAllSpecifications } from "@/lib/actions/spec-features.actions";
+import { getSpecificationsFull } from "@/lib/actions/new/specification/get.actions";
+import { getFeaturesFull } from "@/lib/actions/new/feature/get.actions";
 import SpecificationsTable from "@/components/admin/tables/specifications-table";
 import FeaturesTable from "@/components/admin/tables/features-table";
 
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
 const SpecificationsAndFeaturesPage = async () => {
     await requireAdmin();
 
-    const specs = await getAllSpecifications();
-    const features = await getAllFeatures();
+    const specs = await getSpecificationsFull();
+    const features = await getFeaturesFull();
 
     return (
         <div className="flex flex-col gap-10">

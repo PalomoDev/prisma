@@ -12,6 +12,13 @@ Password: Brasil_1738&&
 
 Name: Alexika_Shop_ES
 
+
+
+supabase
+PalomoDev's аутентификация через гитхаб
+Alexika
+sgZ_St_9FkxUq*j
+
 ## API сервисы
 
 ## Хостинг

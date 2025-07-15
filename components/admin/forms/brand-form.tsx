@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createBrandSchema } from '@/lib/validations/category.validation';
 import { brandDefaultValues } from "@/lib/constants";
-import { createBrand } from "@/lib/actions/product.actions";
+import { createBrand } from "@/lib/actions/new/brand/brand.actions";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
